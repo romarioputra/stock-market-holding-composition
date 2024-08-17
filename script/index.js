@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const AdmZip = require("adm-zip");
+const fs = require('fs/promises');
+const downloadDirectory = 'download'
 
 // https://chromedevtools.github.io/devtools-protocol/tot/Browser/
 async function waitUntilDownload(page) {
@@ -18,13 +20,23 @@ async function waitUntilDownload(page) {
 async function setDownloadBehaviour(page, downloadPath) {
     await page._client().send('Page.setDownloadBehavior', {
         behavior: 'allow',
-        downloadPath: downloadPath 
+        downloadPath: downloadPath
     });
+}
+
+function unzip(fileName) {
+    const zip = new AdmZip(`./${downloadDirectory}/${fileName}`);
+    zip.extractAllTo(`${downloadDirectory}`)
+}
+
+async function parseToJSON(fileName) {
+    const array = (await fs.readFile(`./${downloadDirectory}/Balancepos20240731.txt`, 'utf8')).split("\n")
+    return array
 }
 
 async function index() {
     let fileName = ''
-    const downloadPath = path.resolve('./download');
+    const downloadPath = path.resolve(`./${downloadDirectory}`);
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(
@@ -44,13 +56,10 @@ async function index() {
     await setDownloadBehaviour(page, downloadPath)
     await page.click('.btn.btn--primary')
     await waitUntilDownload(page)
+    unzip(fileName)
+    const data = await parseToJSON(fileName)
+    console.log(data[0])
     await browser.close()
 }
-// index();
 
-function unzip() {
-    const zip = new AdmZip("./download/BalanceposEfek20240731.zip");
-    zip.extractAllTo("download")
-}
-
-unzip()
+index();
