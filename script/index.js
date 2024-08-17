@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
+const AdmZip = require("adm-zip");
 
 // https://chromedevtools.github.io/devtools-protocol/tot/Browser/
 async function waitUntilDownload(page) {
@@ -24,9 +25,7 @@ async function setDownloadBehaviour(page, downloadPath) {
 async function index() {
     let fileName = ''
     const downloadPath = path.resolve('./download');
-    const browser = await puppeteer.launch({
-        headless: true,
-    });
+    const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(
         'https://www.ksei.co.id/archive_download/holding_composition',
@@ -41,10 +40,17 @@ async function index() {
             console.log(fileName)
         }
     });
-    
+
     await setDownloadBehaviour(page, downloadPath)
     await page.click('.btn.btn--primary')
     await waitUntilDownload(page)
     await browser.close()
 }
-index();
+// index();
+
+function unzip() {
+    const zip = new AdmZip("./download/BalanceposEfek20240731.zip");
+    zip.extractAllTo("download")
+}
+
+unzip()
