@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 
+// https://chromedevtools.github.io/devtools-protocol/tot/Browser/
 async function waitUntilDownload(page) {
     return new Promise((resolve, reject) => {
         page._client().on('Page.downloadProgress', e => { // or 'Browser.downloadProgress'
@@ -21,6 +22,7 @@ async function setDownloadBehaviour(page, downloadPath) {
 }
 
 async function index() {
+    let fileName = ''
     const downloadPath = path.resolve('./download');
     const browser = await puppeteer.launch({
         headless: true,
@@ -30,6 +32,16 @@ async function index() {
         'https://www.ksei.co.id/archive_download/holding_composition',
         { waitUntil: 'networkidle2' }
     );
+    // https://stackoverflow.com/questions/57408918/can-we-somehow-rename-the-file-that-is-being-downloaded-using-puppeteer
+    page.on('response', response => {
+        const url = response.request().url();
+        const contentType = response.headers()['content-type'];
+        if (contentType == 'application/zip') {
+            fileName = url.split("/").pop()
+            console.log(fileName)
+        }
+    });
+    
     await setDownloadBehaviour(page, downloadPath)
     await page.click('.btn.btn--primary')
     await waitUntilDownload(page)
