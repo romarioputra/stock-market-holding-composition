@@ -30,14 +30,16 @@ function unzip(fileName) {
 }
 
 async function parseToJSON(fileName) {
-    const array = (await fs.readFile(`./${downloadDirectory}/Balancepos20240731.txt`, 'utf8')).split("\n")
+    const array = (await fs.readFile(`./${downloadDirectory}/${fileName}`, 'utf8')).split("\n")
     return array
 }
 
 async function index() {
     let fileName = ''
     const downloadPath = path.resolve(`./${downloadDirectory}`);
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        args: ['--no-sandbox']
+    });
     const page = await browser.newPage();
     await page.goto(
         'https://www.ksei.co.id/archive_download/holding_composition',
@@ -49,7 +51,6 @@ async function index() {
         const contentType = response.headers()['content-type'];
         if (contentType == 'application/zip') {
             fileName = url.split("/").pop()
-            console.log(fileName)
         }
     });
 
@@ -57,9 +58,14 @@ async function index() {
     await page.click('.btn.btn--primary')
     await waitUntilDownload(page)
     unzip(fileName)
-    const data = await parseToJSON(fileName)
-    console.log(data[0])
+    const data = await parseToJSON(fileName.replace(".zip", ".txt"))
     await browser.close()
 }
 
-index();
+// index();
+
+const test = async () => {
+    const data = await parseToJSON('Balancepos20240731.zip'.replace(".zip", ".txt"))
+    console.log(data[1])
+}
+test()
